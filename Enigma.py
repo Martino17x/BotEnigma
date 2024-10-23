@@ -15,7 +15,9 @@ def normalizar_letra(letra):
         'É': 'E',
         'Í': 'I',
         'Ó': 'O',
-        'Ú': 'U'
+        'Ú': 'U',
+        'Ü': 'U',
+        'ü': 'U'
     }
     return conversion.get(letra, letra)
 
