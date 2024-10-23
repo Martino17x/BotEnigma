@@ -1,44 +1,65 @@
 import re
 
-# Lista básica de palabras comunes en español. Se puede ampliar para mejorar precisión.
-diccionario_palabras_comunes = {"hola", "mundo", "como", "estas", "el", "ella", "es", "un", "una", "yo", "tu", "la", "que", "de", "a", "en"}
+# Diccionario de palabras comunes en español (ampliable)
+diccionario_palabras_comunes = {"hola", "mundo", "como", "estas", "el", "ella", "es", "un", "una", "yo", "tu", "la", "que", "de", "a", "en", "más", "se", "quedaron", "divertidos"}
+
+# Función que convierte letras con tildes a su versión sin tilde
+def normalizar_letra(letra):
+    conversion = {
+        'á': 'a',
+        'é': 'e',
+        'í': 'i',
+        'ó': 'o',
+        'ú': 'u',
+        'Á': 'A',
+        'É': 'E',
+        'Í': 'I',
+        'Ó': 'O',
+        'Ú': 'U'
+    }
+    return conversion.get(letra, letra)
+
+def es_letra_espanola(caracter):
+    # Consideramos letras válidas del alfabeto español, incluyendo ñ
+    return caracter.isalpha() and caracter in "abcdefghijklmnñopqrstuvwxyz"
 
 def cifrar_mensaje(mensaje, k=3):
     cifrado = ""
     for i, letra in enumerate(mensaje):
-        if letra.isalpha():  # Solo ciframos si es una letra
+        letra_normalizada = normalizar_letra(letra.lower())
+        if es_letra_espanola(letra_normalizada):  # Solo ciframos si es una letra española
             if i % 2 == 0:  # Posiciones pares
-                cifrado += chr((ord(letra) + k - 97) % 26 + 97)
+                cifrado += chr((ord(letra_normalizada) + k - 97) % 26 + 97)
             else:  # Posiciones impares
-                cifrado += chr((ord(letra) + (k + 1) - 97) % 26 + 97)
+                cifrado += chr((ord(letra_normalizada) + (k + 1) - 97) % 26 + 97)
         else:
-            cifrado += letra  # Si no es una letra (como espacio), lo dejamos igual
+            cifrado += letra  # Si no es una letra (como espacio o símbolo), lo dejamos igual
     return cifrado
 
 def descifrar_mensaje(mensaje, k=3):
     descifrado = ""
     for i, letra in enumerate(mensaje):
-        if letra.isalpha():  # Solo desciframos si es una letra
+        if es_letra_espanola(letra):  # Solo desciframos si es una letra española
             if i % 2 == 0:  # Posiciones pares
                 descifrado += chr((ord(letra) - k - 97) % 26 + 97)
             else:  # Posiciones impares
                 descifrado += chr((ord(letra) - (k + 1) - 97) % 26 + 97)
         else:
-            descifrado += letra  # Si no es una letra (como espacio), lo dejamos igual
+            descifrado += letra  # Si no es una letra (como espacio o símbolo), lo dejamos igual
     return descifrado
 
 def descifrar_mensaje_cesar(mensaje, k):
     descifrado = ""
     for letra in mensaje:
-        if letra.isalpha():  # Solo desciframos si es una letra
+        if es_letra_espanola(letra):  # Solo desciframos si es una letra española
             descifrado += chr((ord(letra) - k - 97) % 26 + 97)
         else:
-            descifrado += letra  # Si no es una letra (como espacio), lo dejamos igual
+            descifrado += letra  # Si no es una letra (como espacio o símbolo), lo dejamos igual
     return descifrado
 
 def verificar_descifrado_correcto(texto):
     # Elimina caracteres no alfabéticos y divide el texto en palabras
-    palabras = re.findall(r'\b[a-z]+\b', texto)
+    palabras = re.findall(r'\b[a-záéíóúñ]+\b', texto)
     # Compara cada palabra con el diccionario
     coincidencias = sum(1 for palabra in palabras if palabra in diccionario_palabras_comunes)
     return coincidencias
