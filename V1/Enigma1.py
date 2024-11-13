@@ -1,10 +1,20 @@
 import re
+from difflib import SequenceMatcher
 
 # Alfabeto español completo incluyendo la ñ
 ALFABETO_ESPANOL = "abcdefghijklmnñopqrstuvwxyz"
 
-# Diccionario de palabras comunes en español (ampliable)
-diccionario_palabras_comunes = {"hola", "mundo", "como", "estas", "el", "ella", "es", "un", "una", "yo", "tu", "la", "que", "de", "a", "en", "más", "se", "quedaron", "divertidos", "ñandu"}
+def cargar_lista_desde_archivo(nombre_archivo):
+    try:
+        with open(nombre_archivo, 'r', encoding='utf-8') as file:
+            return set(line.strip().lower() for line in file)
+    except FileNotFoundError:
+        print(f"Advertencia: El archivo {nombre_archivo} no se encontró. Se usará una lista vacía.")
+        return set()
+
+# Cargar nombres y palabras comunes desde archivos externos
+nombres_comunes = cargar_lista_desde_archivo('nombres_comunes.txt')
+palabras_comunes = cargar_lista_desde_archivo('palabras_comunes.txt')
 
 def normalizar_letra(letra):
     conversion = {
@@ -61,17 +71,27 @@ def descifrar_mensaje_cesar(mensaje, k):
     return descifrado
 
 def verificar_descifrado_correcto(texto):
-    # Elimina caracteres no alfabéticos y divide el texto en palabras
     palabras = re.findall(r'\b[a-záéíóúñ]+\b', texto.lower())
-    # Compara cada palabra con el diccionario
-    coincidencias = sum(1 for palabra in palabras if palabra in diccionario_palabras_comunes)
-    return coincidencias
+    puntuacion = 0
+    for palabra in palabras:
+        if palabra in palabras_comunes:
+            puntuacion += len(palabra) * 2  # Puntuación mayor para palabras comunes
+        elif palabra in nombres_comunes:
+            puntuacion += len(palabra) * 3  # Puntuación aún mayor para nombres comunes
+        else:
+            # Buscar coincidencias parciales
+            for palabra_comun in palabras_comunes.union(nombres_comunes):
+                ratio = SequenceMatcher(None, palabra, palabra_comun).ratio()
+                if ratio > 0.8:  # Si hay una coincidencia del 80% o más
+                    puntuacion += len(palabra)
+                    break
+    return puntuacion
 
 def romper_cifrado(mensaje):
     print("Intentando romper el cifrado. Probando diferentes métodos...\n")
     
     mejor_k = None
-    mejor_coincidencia = 0
+    mejor_puntuacion = 0
     mejor_descifrado = ""
     mejor_metodo = ""
 
@@ -79,12 +99,12 @@ def romper_cifrado(mensaje):
     print("Método 1: Cifrado por pares e impares\n")
     for k in range(1, len(ALFABETO_ESPANOL)):
         intento_descifrado = descifrar_mensaje(mensaje, k)
-        coincidencias = verificar_descifrado_correcto(intento_descifrado)
+        puntuacion = verificar_descifrado_correcto(intento_descifrado)
         
-        print(f"k={k}: {intento_descifrado} (Coincidencias: {coincidencias})")
+        print(f"k={k}: {intento_descifrado} (Puntuación: {puntuacion})")
         
-        if coincidencias > mejor_coincidencia:
-            mejor_coincidencia = coincidencias
+        if puntuacion > mejor_puntuacion:
+            mejor_puntuacion = puntuacion
             mejor_k = k
             mejor_descifrado = intento_descifrado
             mejor_metodo = "Cifrado por pares e impares"
@@ -93,12 +113,12 @@ def romper_cifrado(mensaje):
     print("\nMétodo 2: Cifrado César estándar\n")
     for k in range(1, len(ALFABETO_ESPANOL)):
         intento_descifrado = descifrar_mensaje_cesar(mensaje, k)
-        coincidencias = verificar_descifrado_correcto(intento_descifrado)
+        puntuacion = verificar_descifrado_correcto(intento_descifrado)
         
-        print(f"k={k}: {intento_descifrado} (Coincidencias: {coincidencias})")
+        print(f"k={k}: {intento_descifrado} (Puntuación: {puntuacion})")
         
-        if coincidencias > mejor_coincidencia:
-            mejor_coincidencia = coincidencias
+        if puntuacion > mejor_puntuacion:
+            mejor_puntuacion = puntuacion
             mejor_k = k
             mejor_descifrado = intento_descifrado
             mejor_metodo = "Cifrado César estándar"
